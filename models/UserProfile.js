@@ -20,13 +20,13 @@ const UserProfileSchema = new Schema(
         postedThoughts: [
             {
                 type: Schema.Types.ObjectId,
-                ref: "Thought",
+                ref: "UserThought",
             },
         ],
         userFriends: [
             {
                 type: Schema.Types.ObjectId,
-                ref: "User",
+                ref: "UserProfile",
             },
         ],
     },
@@ -39,10 +39,6 @@ const UserProfileSchema = new Schema(
     }
 );
 
-UserProfileSchema.virtual("totalFriends").get(function() {
-    return this.userFriends.length;
-});
+const UserProfile = model("UserProfile", UserProfileSchema);
 
-const User = model("UserProfile", UserProfileSchema);
-
-module.exports = User;
+module.exports = UserProfile;

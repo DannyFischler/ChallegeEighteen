@@ -1,8 +1,8 @@
-const { Thought, User } = require("../models");
+const { UserThought, UserProfile } = require("../models");
 
 const thoughtController = {
     fetchAllThoughts(req, res) {
-        Thought.find({})
+        UserThought.find({})
             .populate({ path: 'reactions', select: '-__v' })
             .select('-__v')
             .sort({ _id: -1 })
@@ -14,7 +14,7 @@ const thoughtController = {
     },
 
     retrieveThoughtById({ params }, res) {
-        Thought.findOne({ _id: params.id })
+        UserThought.findOne({ _id: params.id })
             .populate({ path: 'reactions', select: '-__v' })
             .select('-__v')
             .then(thought => {
@@ -29,24 +29,25 @@ const thoughtController = {
             });
     },
 
-    createNewThought({ body }, res) {
-        Thought.create(body)
-            .then(({ _id }) => User.findOneAndUpdate(
-                { _id: body.userId },
-                { $push: { thoughts: _id } },
-                { new: true }
-            ))
-            .then(user => {
-                if (!user) {
-                    return res.status(404).send('User not found');
-                }
-                res.send('Thought successfully created');
-            })
-            .catch(error => res.status(400).send('Error creating thought'));
-    },
+   createNewThought({ body }, res) {
+    UserThought.create(body)
+        .then(({ _id }) => UserProfile.findOneAndUpdate(
+            { userName: body.userName }, 
+            { $push: { postedThoughts: _id } }, 
+            { new: true }
+        ))
+        .then(userProfile => {
+            if (!userProfile) {
+                return res.status(404).send('User not found');
+            }
+            res.send('Thought successfully created');
+        })
+        .catch(error => res.status(400).send('Error creating thought'));
+},
+
 
     modifyThought({ params, body }, res) {
-        Thought.findOneAndUpdate({ _id: params.id }, body, { new: true, runValidators: true })
+        UserThought.findOneAndUpdate({ _id: params.id }, body, { new: true, runValidators: true })
             .then(updatedThought => {
                 if (!updatedThought) {
                     return res.status(404).send('Thought not found');
@@ -57,12 +58,12 @@ const thoughtController = {
     },
 
     removeThought({ params }, res) {
-        Thought.findOneAndDelete({ _id: params.id })
+        UserThought.findOneAndDelete({ _id: params.id })
             .then(deletedThought => {
                 if (!deletedThought) {
                     return res.status(404).send('Thought not found');
                 }
-                return User.findOneAndUpdate(
+                return UserProfile.findOneAndUpdate(
                     { thoughts: params.id },
                     { $pull: { thoughts: params.id } },
                     { new: true }
@@ -78,7 +79,7 @@ const thoughtController = {
     },
 
     addThoughtReaction({ params, body }, res) {
-        Thought.findOneAndUpdate(
+        UserThought.findOneAndUpdate(
             { _id: params.thoughtId },
             { $addToSet: { reactions: body } },
             { new: true, runValidators: true }
@@ -93,7 +94,7 @@ const thoughtController = {
     },
 
     removeThoughtReaction({ params }, res) {
-        Thought.findOneAndUpdate(
+        UserThought.findOneAndUpdate(
             { _id: params.thoughtId },
             { $pull: { reactions: { reactionId: params.reactionId } } },
             { new: true }
